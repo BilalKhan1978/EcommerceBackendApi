@@ -1,11 +1,13 @@
 ﻿using EcommerceBackendApi.Services.Interfaces;
 using EcommerceBackendApi.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EcommerceBackendApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class ProductController : Controller
     {
         private readonly IProductService _product;  // Inject the service
@@ -41,6 +43,7 @@ namespace EcommerceBackendApi.Controllers
           }
         }
 
+       // this is just for posting all data. 
         [HttpPost("/api/Products")]
         public async Task<IActionResult> AddProducts(List<AddProductRequestDto> addProductRequestDto)
         {
