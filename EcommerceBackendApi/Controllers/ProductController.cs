@@ -1,10 +1,9 @@
-﻿using EcommerceBackendApi.Models;
-using EcommerceBackendApi.Services.Interfaces;
+﻿using EcommerceBackendApi.Services.Interfaces;
 using EcommerceBackendApi.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+
 
 namespace EcommerceBackendApi.Controllers
 {
@@ -12,12 +11,15 @@ namespace EcommerceBackendApi.Controllers
     [Route("api/[controller]")]
     public class ProductController : Controller
     {
-        private readonly IProductService _product;  // Inject the service
+        // Inject the following services
+        private readonly IProductService _product;  
         private readonly IUserService _userService;
-        public ProductController(IProductService product, IUserService userService)
+        private readonly ILogger<ProductController> _logger;
+        public ProductController(IProductService product, IUserService userService, ILogger<ProductController> logger)
         {
             _product = product;
             _userService = userService;
+            _logger = logger;
         }
 
         [HttpGet("AllProducts")]
@@ -25,11 +27,12 @@ namespace EcommerceBackendApi.Controllers
         {
           try
           {
-            return Ok(await _product.GetAllProducts(offset, count));
+                return Ok(await _product.GetAllProducts(offset, count));
           }
           catch (Exception e)
           {
-            throw new Exception(e.Message);
+                _logger.LogError(e.Message);
+                throw new Exception(e.Message);
           }
         }
 
@@ -37,13 +40,29 @@ namespace EcommerceBackendApi.Controllers
         [Authorize(Roles = "super-admin, admin")]
         public async Task<IActionResult> AddProduct([FromBody] AddProductRequestDto addProductRequestDto)
         {
-          try
-          {
+            var identity = HttpContext.User.Identity as ClaimsIdentity;
+            var userClaims = identity.Claims;
+            var role = userClaims.FirstOrDefault(o => o.Type == ClaimTypes.Role)?.Value;
+            if (role == "admin")
+            {
+                var emailAddress = userClaims.FirstOrDefault(o => o.Type == ClaimTypes.Email)?.Value;
+                var user = await _userService.GetUserByEmail(emailAddress);
+                if (user != null)
+                {
+                    if (user.UniqueStoreId != addProductRequestDto.UniqueStoreId)
+                        return Unauthorized("User is not allowed to delete this stroes' products");
+                }
+                else
+                    return NotFound("User doesnt exist");
+            }
+            try
+            {
                 await _product.AddProduct(addProductRequestDto);
                 return Ok("Product has been added");
-          }
+            }
           catch(Exception e)
           {
+                _logger.LogError(e.Message);
                 throw new Exception(e.Message);
           }
         }
@@ -73,6 +92,7 @@ namespace EcommerceBackendApi.Controllers
             }
             catch(Exception e)
             {
+                _logger.LogError(e.Message);
                 if (e.Message.Contains("Record Not Found"))
                     return NotFound("No Record Found");
                 throw new Exception(e.Message);
@@ -90,6 +110,7 @@ namespace EcommerceBackendApi.Controllers
           }
           catch (Exception e)
           {
+                _logger.LogError(e.Message);
                 if (e.Message.Contains("No Record Found"))
                     return NotFound("No Record Found");
                 throw new Exception(e.Message);
@@ -107,6 +128,7 @@ namespace EcommerceBackendApi.Controllers
             }
             catch(Exception e)
             {
+                _logger.LogError(e.Message);
                 throw new Exception(e.Message);
             }
         }
@@ -123,6 +145,7 @@ namespace EcommerceBackendApi.Controllers
             }
             catch (Exception e)
             {
+                _logger.LogError(e.Message);
                 if (e.Message.Contains("No Record Found"))
                     return NotFound("No Record Found to Delete");
                 throw new Exception(e.Message);
@@ -133,9 +156,9 @@ namespace EcommerceBackendApi.Controllers
         [Authorize(Roles = "super-admin, admin")]
         public async Task<IActionResult> DeleteProductsByUniqueStoreId([FromRoute] int uniqueStoreId)
         {
-            var identity = HttpContext.User.Identity as ClaimsIdentity;
-            var userClaims = identity.Claims;
-            var role = userClaims.FirstOrDefault(o => o.Type == ClaimTypes.Role)?.Value;
+            var identity = HttpContext.User.Identity as ClaimsIdentity; // whole taken
+            var userClaims = identity.Claims; // taking out claim section
+            var role = userClaims.FirstOrDefault(o => o.Type == ClaimTypes.Role)?.Value; //
             if (role == "admin")
             {
                 var emailAddress = userClaims.FirstOrDefault(o => o.Type == ClaimTypes.Email)?.Value;
@@ -143,7 +166,7 @@ namespace EcommerceBackendApi.Controllers
                 if (user != null)
                 {
                     if (user.UniqueStoreId != uniqueStoreId)
-                        return Unauthorized("User is not alloewed to delete this stroes' products");
+                        return Unauthorized("User is not allowed to delete this stroes' products");
                 }
                 else
                     return NotFound("User doesnt exist");
@@ -154,12 +177,13 @@ namespace EcommerceBackendApi.Controllers
                 await _product.DeleteProductsByUniqueStoreId(uniqueStoreId);
                 return Ok($"All Products have been deleted against {uniqueStoreId}");
             }
-          catch (Exception e)
-          {
+            catch (Exception e)
+            {
+                _logger.LogError(e.Message);
                 if (e.Message.Contains("No Record Found"))
                     NotFound("No Record Found to Delete");
                 throw new Exception(e.Message); 
-          }
+            }
         }
 
         [HttpGet("search/{query}")]
@@ -171,6 +195,7 @@ namespace EcommerceBackendApi.Controllers
             }
             catch (Exception e)
             {
+                _logger.LogError(e.Message);
                 throw new Exception(e.Message);
             }
         }

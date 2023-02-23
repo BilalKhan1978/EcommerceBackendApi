@@ -10,9 +10,11 @@ namespace EcommerceBackendApi.Controllers
     public class UserController : Controller
     {
         private readonly IUserService _userService;
-        public UserController(IUserService userService)
+        private readonly ILogger<UserController> _logger;
+        public UserController(IUserService userService, ILogger<UserController> logger)
         {
             _userService = userService;
+            _logger = logger;   
         }
         [HttpPost]
         public async Task<IActionResult> AddUser([FromBody] AddUserRequestDto addUserRequestDto)
@@ -27,6 +29,7 @@ namespace EcommerceBackendApi.Controllers
             }
             catch (Exception e)
             {
+                _logger.LogError(e.Message);
                 throw new Exception(e.Message);
             }
         }

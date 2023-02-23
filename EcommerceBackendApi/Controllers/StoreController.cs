@@ -1,10 +1,9 @@
-﻿using EcommerceBackendApi.Models;
-using EcommerceBackendApi.Services.Interfaces;
+﻿using EcommerceBackendApi.Services.Interfaces;
 using EcommerceBackendApi.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+
 
 namespace EcommerceBackendApi.Controllers
 {
@@ -13,9 +12,11 @@ namespace EcommerceBackendApi.Controllers
     public class StoreController : Controller
     {
         private readonly IStoreService _storeService;
-        public StoreController(IStoreService storeService)
+        private readonly ILogger<StoreController> _logger;
+        public StoreController(IStoreService storeService, ILogger<StoreController> logger)
         {
             _storeService = storeService;
+            _logger = logger;   
         }
 
         //[HttpPost]
@@ -44,6 +45,7 @@ namespace EcommerceBackendApi.Controllers
             }
             catch(Exception e)
             {
+                _logger.LogError(e.Message);
                 throw new Exception(e.Message);
             }
         }
@@ -58,6 +60,7 @@ namespace EcommerceBackendApi.Controllers
           }
           catch(Exception e)
           {
+                _logger.LogError(e.Message);
                 throw new Exception(e.Message);
           }
         }
@@ -71,7 +74,8 @@ namespace EcommerceBackendApi.Controllers
                 return Ok(await _storeService.GetStoreById(id));
             }
             catch(Exception e)
-            { 
+            {
+                _logger.LogError(e.Message);
                 if (e.Message.Contains("No Record Found"))
                    {
                     return NotFound("No Record Found to Display");
@@ -109,6 +113,7 @@ namespace EcommerceBackendApi.Controllers
             }
             catch(Exception e)
             {
+                _logger.LogError(e.Message);
                 if (e.Message.Contains("No Record Found"))
                 {
                     NotFound("No record found to delete / remove");
@@ -147,7 +152,8 @@ namespace EcommerceBackendApi.Controllers
           }
           catch (Exception e)
           {
-             throw new Exception(e.Message);
+                _logger.LogError(e.Message);
+                throw new Exception(e.Message);
           }
         }
 
@@ -165,6 +171,7 @@ namespace EcommerceBackendApi.Controllers
             }
             catch (Exception e)
             {
+                _logger.LogError(e.Message);
                 if (e.Message.Contains("User not found"))
                     NotFound("User does not exist");
                 if (e.Message.Contains("Store not found"))
@@ -182,6 +189,7 @@ namespace EcommerceBackendApi.Controllers
             }
             catch (Exception e)
             {
+                _logger.LogError(e.Message);
                 throw new Exception(e.Message);
             }
         }

@@ -1,5 +1,6 @@
 ﻿using EcommerceBackendApi.Data;
 using EcommerceBackendApi.Models;
+using EcommerceBackendApi.Services.Interfaces;
 using EcommerceBackendApi.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -15,25 +16,34 @@ namespace EcommerceBackendApi.Controllers
     {
         private IConfiguration _config;
         public readonly EcommerceDbContext _context;
-
-        public JwTokenController(IConfiguration config, EcommerceDbContext context)
+        private readonly IUserService _userService;
+        public JwTokenController(IConfiguration config, EcommerceDbContext context, IUserService userService)
         {
             _config = config;
             _context = context;
+            _userService = userService;
         }
         //[AllowAnonymous]
         [HttpPost]
         public IActionResult Login([FromBody] JwtUserRequestDto userLogin)
         {
-            var user = Authenticate(userLogin);
-
-            if (user != null)
+            try
             {
-                var token = Generate(user);
-                return Ok(token);
-            }
+                var user = Authenticate(userLogin);
 
-            return NotFound("User not found");
+                if (user != null)
+                {
+                    var token = Generate(user);
+                    return Ok(token);
+                }
+
+                return NotFound("User not found");
+            }
+           catch(Exception e)
+            {
+                return Unauthorized(e.Message);
+
+            }
         }
 
         [NonAction]
@@ -60,7 +70,7 @@ namespace EcommerceBackendApi.Controllers
         [NonAction]
         private User Authenticate(JwtUserRequestDto userLogin)
         {
-            var currentUser = _context.Users.FirstOrDefault(o => o.Email.ToLower() == userLogin.Email.ToLower() && o.Password == userLogin.Password);
+            var currentUser = _userService.VerifyUser(userLogin.Email, userLogin.Password).Result;
 
             if (currentUser != null)
             {

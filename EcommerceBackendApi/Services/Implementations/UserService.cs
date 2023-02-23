@@ -1,10 +1,14 @@
 ﻿using AutoMapper;
+using Azure.Core;
 using EcommerceBackendApi.Data;
 using EcommerceBackendApi.Models;
 using EcommerceBackendApi.Services.Interfaces;
 using EcommerceBackendApi.ViewModels;
 using Microsoft.AspNetCore.Server.IIS.Core;
 using Microsoft.EntityFrameworkCore;
+using System.Net.NetworkInformation;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace EcommerceBackendApi.Services.Implementations
 {
@@ -24,7 +28,19 @@ namespace EcommerceBackendApi.Services.Implementations
             
             var emailValidation = await _dbContext.Users.Where(x => x.Email == addUserRequestDto.Email).FirstOrDefaultAsync();
             if (emailValidation != null) throw new Exception("This email has already been taken. kindly try another one");
-            var user =  _mapper.Map<User>(addUserRequestDto);
+            CreatePasswordHash(addUserRequestDto.Password,
+                 out byte[] passwordHash,
+                 out byte[] passwordSalt);
+            var user = new User
+            {
+                Role = addUserRequestDto.Role,
+                Email = addUserRequestDto.Email,
+                PassHash = passwordHash,
+                PassSalt = passwordSalt,
+                UniqueStoreId=addUserRequestDto.UniqueStoreId,
+                Password="newpassword"
+            };
+            
             await _dbContext.Users.AddAsync(user);
             await _dbContext.SaveChangesAsync();
         }
@@ -33,6 +49,20 @@ namespace EcommerceBackendApi.Services.Implementations
         {
             return await _dbContext.Users.Where(x => x.Email == email).FirstOrDefaultAsync();
         }
+        public async Task<User> VerifyUser(string email, string password)
+        {
+            var user = await _dbContext.Users.Where(x => x.Email == email).FirstOrDefaultAsync();
+            if (user == null)
+                throw new Exception("user does not exist"); ;
+            // if user is not null
+            if (!VerifyPinHash(password, user.PassHash, user.PassSalt))
+                throw new Exception("You have entered incorrect Password");
+
+            // Authentication verified
+            return user;
+
+        }
+
 
         //public async Task AddUsers(List<AddUserRequestDto> addUserRequestDto)
         //{
@@ -50,5 +80,31 @@ namespace EcommerceBackendApi.Services.Implementations
         //{
         //    throw new NotImplementedException();
         //}
+
+        private void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
+        {
+            using (var hmac = new HMACSHA512())
+            {
+                passwordSalt = hmac.Key;
+                passwordHash = hmac
+                    .ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
+            }
+        }
+
+        private static bool VerifyPinHash(string Pin, byte[] pinHash, byte[] pinSalt)
+        {
+            if (string.IsNullOrWhiteSpace(Pin)) throw new Exception("Pin");
+            // verify pin
+            using (var hmac = new System.Security.Cryptography.HMACSHA512(pinSalt))
+            {
+                var computedPinHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(Pin));
+                for (int i = 0; i < computedPinHash.Length; i++)
+                {
+                    if (computedPinHash[i] != pinHash[i]) return false;
+                }
+            }
+            return true;
+        }
+
     }
 }
