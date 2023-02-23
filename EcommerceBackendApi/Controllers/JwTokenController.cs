@@ -2,7 +2,6 @@
 using EcommerceBackendApi.Models;
 using EcommerceBackendApi.ViewModels;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -14,62 +13,61 @@ namespace EcommerceBackendApi.Controllers
     [ApiController]
     public class JwTokenController : Controller
     {
-        public IConfiguration _configuration;
+        private IConfiguration _config;
         public readonly EcommerceDbContext _context;
 
-        public JwTokenController(IConfiguration configuration, EcommerceDbContext context)
+        public JwTokenController(IConfiguration config, EcommerceDbContext context)
         {
-            _configuration = configuration;
+            _config = config;
             _context = context;
         }
+        //[AllowAnonymous]
         [HttpPost]
-        public async Task<IActionResult> Post(JwTokenRequestDto user)
+        public IActionResult Login([FromBody] JwtUserRequestDto userLogin)
         {
-            if (user != null && user.Email != null && user.Password != null && user.Role !=null)
+            var user = Authenticate(userLogin);
+
+            if (user != null)
             {
-                var userData = await GetUser(user.Email, user.Password, user.Role);
-                var jwt = _configuration.GetSection("Jwt").Get<Jwt>();
-                if (userData != null)
-                {
-                    var claims = new[]
-                    {
-                        new Claim(JwtRegisteredClaimNames.Sub, jwt.Subject),
-                        new Claim(JwtRegisteredClaimNames.Jti,Guid.NewGuid().ToString()),
-                        new Claim(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString()),
-                        new Claim("UserName",user.Email),
-                        new Claim("Password",user.Password),
-                        new Claim("Role",user.Role)
-                    };
-
-                    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.key));
-                    var signIn = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-                    var token = new JwtSecurityToken(
-
-                        jwt.Issuer,
-                        jwt.Audience,
-                        claims,
-                        expires: DateTime.Now.AddMinutes(20),
-                        signingCredentials: signIn
-                     );
-                    return Ok(new JwtSecurityTokenHandler().WriteToken(token));
-                }
-                else
-                {
-                    return BadRequest("Invalid Credentials");
-                }
-
-            }
-            else
-            {
-                return BadRequest("Invalid Credentials");
+                var token = Generate(user);
+                return Ok(token);
             }
 
+            return NotFound("User not found");
         }
 
         [NonAction]
-        public async Task<User> GetUser(string email, string password, string role)
+        private string Generate(User user)
         {
-            return await _context.Users.FirstOrDefaultAsync(u => u.Email == email && u.Password == password && u.Role == role);
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
+            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Role, user.Role)
+            };
+
+            var token = new JwtSecurityToken(_config["Jwt:Issuer"],
+              _config["Jwt:Audience"],
+              claims,
+              expires: DateTime.Now.AddMinutes(15),
+              signingCredentials: credentials);
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        [NonAction]
+        private User Authenticate(JwtUserRequestDto userLogin)
+        {
+            var currentUser = _context.Users.FirstOrDefault(o => o.Email.ToLower() == userLogin.Email.ToLower() && o.Password == userLogin.Password);
+
+            if (currentUser != null)
+            {
+                return currentUser;
+            }
+
+            return null;
         }
     }
 }

@@ -9,16 +9,14 @@ namespace EcommerceBackendApi.Mapper
       public AutoMapperProfiles()
        {
             CreateMap<AddProductRequestDto, Product>();
-
+            CreateMap<UpdateProductRequestDto, Product>();
             CreateMap<Product, GetProductsRequestDto>();
 
             CreateMap<AddUserRequestDto, User>();
 
-            CreateMap<GetStoreRequestDto, Store>();
-
             CreateMap<AddStoreRequestDto, Store>();
-                      
             CreateMap<Store, GetStoreRequestDto>();
+            
 
         }
       

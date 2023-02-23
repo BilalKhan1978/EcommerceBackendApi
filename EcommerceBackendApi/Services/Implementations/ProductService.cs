@@ -19,14 +19,6 @@ namespace EcommerceBackendApi.Services.Implementations
             _mapper = mapper;
         }
 
-        public async Task<List<GetProductsRequestDto>> GetAllProducts()
-        {
-            var products = await _dbContext.Products.ToListAsync();
-            var productsDto = _mapper.Map<List<GetProductsRequestDto>>(products);
-            return productsDto;
-
-        }
-
         public async Task AddProduct(AddProductRequestDto addProductRequestDto)
         {
             var product = _mapper.Map<Product>(addProductRequestDto);
@@ -34,11 +26,19 @@ namespace EcommerceBackendApi.Services.Implementations
             await _dbContext.SaveChangesAsync();
         }
 
-        public async Task AddProducts(List<AddProductRequestDto> addProductRequestDto)
+        //public async Task AddProducts(List<AddProductRequestDto> addProductRequestDto)
+        //{
+        //   var products = _mapper.Map<List<Product>>(addProductRequestDto);
+        //    await _dbContext.Products.AddRangeAsync(products);
+        //    await _dbContext.SaveChangesAsync();
+        //}
+
+        public async Task<List<GetProductsRequestDto>> GetAllProducts(int offset, int count)
         {
-           var products = _mapper.Map<List<Product>>(addProductRequestDto);
-            await _dbContext.Products.AddRangeAsync(products);
-            await _dbContext.SaveChangesAsync();
+            var products = await _dbContext.Products.OrderBy(x => x.Id).Skip(offset).Take(count).ToListAsync();
+            var productsDto = _mapper.Map<List<GetProductsRequestDto>>(products);
+            return productsDto;
+
         }
 
         public async Task<List<GetProductsRequestDto>> GetProductsByUniqueStoreId(int uniqueStoreId)
@@ -58,16 +58,47 @@ namespace EcommerceBackendApi.Services.Implementations
             var productDto = _mapper.Map<GetProductsRequestDto>(product);
             return productDto;
         }
-
-        public async Task DeleteProduct(int id, int uniqueStoreId)
+        
+        public async Task UpdateProduct(UpdateProductRequestDto updateProductRequestDto)
         {
-            var product = await _dbContext.Products.Where(x => x.Id==id && x.UniqueStoreId == uniqueStoreId).FirstOrDefaultAsync();
+             
+           var updateProduct = await _dbContext.Products.FirstOrDefaultAsync(x => x.Id == updateProductRequestDto.Id);
+           if (updateProduct == null) throw new Exception("Product does not exist anymore");
+           var product = _mapper.Map<Product>(updateProductRequestDto);
+           _dbContext.Products.Update(product);    
+           await _dbContext.SaveChangesAsync();
+            
+        }
+
+        public async Task DeleteProductById(int id)
+        {
+            var product = await _dbContext.Products.Where(x => x.Id == id).FirstOrDefaultAsync();
             // Also can use following
-            // var product = await _dbContext.Products.FindAsync(_dbContext.Products.FirstOrDefault(x => x.Id == id && x.UniqueStoreId == uniqueStoreId));
+            // var product = await _dbContext.Products.FindAsync(_dbContext.Products.FirstOrDefault(x => x.Id == id));
             if (product == null) throw new Exception("No Record Found");
             _dbContext.Products.Remove(product);
             await _dbContext.SaveChangesAsync();
 
+        }
+
+        public async Task DeleteProductsByUniqueStoreId(int uniqueStoreId)
+        {
+            var storeProducts = await _dbContext.Products.Where(x => x.UniqueStoreId == uniqueStoreId).ToListAsync();
+            if (storeProducts == null) throw new Exception("No Record Found");
+            _dbContext.Remove(storeProducts);
+            await _dbContext.SaveChangesAsync();
+        }
+
+        public async Task<List<Product>> SearchProducts(string searchCriteria)
+        {
+            var trimmedQuery = "%" + searchCriteria + "%";
+            var query = _dbContext.Products
+                            .Where(x => EF.Functions.Like(x.Title, trimmedQuery) ||
+                                        EF.Functions.Like(x.Category, trimmedQuery))
+                            .OrderBy(x => x.Title);
+
+            var productsList = await query.ToListAsync();
+            return productsList;
         }
     }
 }
