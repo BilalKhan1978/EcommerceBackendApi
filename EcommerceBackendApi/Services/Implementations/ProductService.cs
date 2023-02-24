@@ -73,8 +73,6 @@ namespace EcommerceBackendApi.Services.Implementations
         public async Task DeleteProductById(int id)
         {
             var product = await _dbContext.Products.Where(x => x.Id == id).FirstOrDefaultAsync();
-            // Also can use following
-            // var product = await _dbContext.Products.FindAsync(_dbContext.Products.FirstOrDefault(x => x.Id == id));
             if (product == null) throw new Exception("No Record Found");
             _dbContext.Products.Remove(product);
             await _dbContext.SaveChangesAsync();

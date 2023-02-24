@@ -50,7 +50,7 @@ namespace EcommerceBackendApi.Controllers
             }
         }
 
-        [HttpGet]
+        [HttpGet("allstores")]
         [Authorize(Roles = "super-admin")]
         public async Task<IActionResult> GetAllStoresData()
         {

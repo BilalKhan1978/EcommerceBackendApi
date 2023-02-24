@@ -1,7 +1,9 @@
 ﻿using EcommerceBackendApi.Services.Interfaces;
 using EcommerceBackendApi.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+
 
 namespace EcommerceBackendApi.Controllers
 {
@@ -17,6 +19,7 @@ namespace EcommerceBackendApi.Controllers
             _logger = logger;   
         }
         [HttpPost]
+        [Authorize(Roles = "super-admin")]
         public async Task<IActionResult> AddUser([FromBody] AddUserRequestDto addUserRequestDto)
         {
             if (!new EmailAddressAttribute().IsValid(addUserRequestDto.Email))
@@ -30,6 +33,40 @@ namespace EcommerceBackendApi.Controllers
             catch (Exception e)
             {
                 _logger.LogError(e.Message);
+                throw new Exception(e.Message);
+            }
+        }
+
+        [HttpGet("allusers")]
+        [Authorize(Roles = "super-admin")]
+        public async Task<IActionResult> GetAllUsersData()
+        {
+            try
+            { 
+            return Ok(await _userService.GetAllUsersData());
+            }
+            catch(Exception e)
+            {
+                _logger.LogError(e.Message);
+                throw new Exception(e.Message);
+            }
+        }
+
+
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "super-admin")]
+        public async Task<IActionResult> DeleteUserById([FromRoute] int id)
+        {
+            try
+            {
+                _userService.DeleteUserById(id);
+                return Ok("Desired user has been successfully deleted / removed");
+            }
+            catch(Exception e)
+            {
+                _logger.LogError(e.Message);
+                if (e.Message.Contains("No user found"))
+                    NotFound("There is no user to delete");
                 throw new Exception(e.Message);
             }
         }

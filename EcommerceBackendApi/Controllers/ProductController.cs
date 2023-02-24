@@ -146,8 +146,8 @@ namespace EcommerceBackendApi.Controllers
             catch (Exception e)
             {
                 _logger.LogError(e.Message);
-                if (e.Message.Contains("No Record Found"))
-                    return NotFound("No Record Found to Delete");
+                if (e.Message.Contains("No record found"))
+                    return NotFound("No record found to delete");
                 throw new Exception(e.Message);
             }
         }
@@ -166,7 +166,7 @@ namespace EcommerceBackendApi.Controllers
                 if (user != null)
                 {
                     if (user.UniqueStoreId != uniqueStoreId)
-                        return Unauthorized("User is not allowed to delete this stroes' products");
+                        return Unauthorized("User is not allowed to delete this stores' products");
                 }
                 else
                     return NotFound("User doesnt exist");

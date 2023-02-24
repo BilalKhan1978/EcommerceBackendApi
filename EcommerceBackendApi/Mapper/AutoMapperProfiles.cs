@@ -13,12 +13,11 @@ namespace EcommerceBackendApi.Mapper
             CreateMap<Product, GetProductsRequestDto>();
 
             CreateMap<AddUserRequestDto, User>();
+            CreateMap<User, GetUserRequestDto>();
 
             CreateMap<AddStoreRequestDto, Store>();
             CreateMap<Store, GetStoreRequestDto>();
-            
-
-        }
+      }
       
     }
 }

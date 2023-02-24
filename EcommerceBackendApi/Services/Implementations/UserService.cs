@@ -45,6 +45,21 @@ namespace EcommerceBackendApi.Services.Implementations
             await _dbContext.SaveChangesAsync();
         }
 
+        public async Task<List<GetUserRequestDto>> GetAllUsersData()
+        {
+            var users = await _dbContext.Users.ToListAsync();
+            var allUsers = _mapper.Map<List<GetUserRequestDto>>(users);
+            return allUsers;
+        }
+
+        public async Task DeleteUserById(int id)
+        {
+            var user = _dbContext.Users.SingleOrDefault(x => x.Id == id);
+            if (user == null) throw new Exception("No user found");
+            _dbContext.Remove(user);
+            await _dbContext.SaveChangesAsync();
+        }
+
         public async Task<User> GetUserByEmail(string email)
         {
             return await _dbContext.Users.Where(x => x.Email == email).FirstOrDefaultAsync();
