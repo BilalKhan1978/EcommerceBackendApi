@@ -1,6 +1,4 @@
-﻿using EcommerceBackendApi.Models;
-
-namespace EcommerceBackendApi.ViewModels
+﻿namespace EcommerceBackendApi.ViewModels
 {
     public class GetProductsRequestDto
     {

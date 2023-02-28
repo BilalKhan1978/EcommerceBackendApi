@@ -1,12 +1,9 @@
 ﻿using AutoMapper;
-using Azure.Core;
 using EcommerceBackendApi.Data;
 using EcommerceBackendApi.Models;
 using EcommerceBackendApi.Services.Interfaces;
 using EcommerceBackendApi.ViewModels;
-using Microsoft.AspNetCore.Server.IIS.Core;
 using Microsoft.EntityFrameworkCore;
-using System.Net.NetworkInformation;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -37,10 +34,8 @@ namespace EcommerceBackendApi.Services.Implementations
                 Email = addUserRequestDto.Email,
                 PassHash = passwordHash,
                 PassSalt = passwordSalt,
-                UniqueStoreId=addUserRequestDto.UniqueStoreId,
-                Password="newpassword"
+                UniqueStoreId=addUserRequestDto.UniqueStoreId                
             };
-            
             await _dbContext.Users.AddAsync(user);
             await _dbContext.SaveChangesAsync();
         }
@@ -64,6 +59,7 @@ namespace EcommerceBackendApi.Services.Implementations
         {
             return await _dbContext.Users.Where(x => x.Email == email).FirstOrDefaultAsync();
         }
+
         public async Task<User> VerifyUser(string email, string password)
         {
             var user = await _dbContext.Users.Where(x => x.Email == email).FirstOrDefaultAsync();

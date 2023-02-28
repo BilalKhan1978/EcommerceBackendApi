@@ -122,7 +122,27 @@ namespace EcommerceBackendApi.Controllers
         public async Task<IActionResult> UpdateProduct([FromBody] UpdateProductRequestDto updateProductRequestDto)
         {
             try
-            { 
+            {
+                var product = await _product.GetProductById(updateProductRequestDto.Id);
+                if (product == null) return NoContent();
+
+                var identity = HttpContext.User.Identity as ClaimsIdentity; // whole taken
+                var userClaims = identity.Claims; // taking out claim section
+                var role = userClaims.FirstOrDefault(o => o.Type == ClaimTypes.Role)?.Value; //
+
+                if (role == "admin")
+                {
+                    var emailAddress = userClaims.FirstOrDefault(o => o.Type == ClaimTypes.Email)?.Value;
+                    var user = await _userService.GetUserByEmail(emailAddress);
+                    if (user != null)
+                    {
+                        if (user.UniqueStoreId != product.UniqueStoreId)
+                            return Unauthorized("User is not allowed to delete this stores' products");
+                    }
+                    else
+                        return NotFound("User doesnt exist");
+                }
+
                 await _product.UpdateProduct(updateProductRequestDto);
                 return Ok("Desired product has been updated");
             }
@@ -133,13 +153,31 @@ namespace EcommerceBackendApi.Controllers
             }
         }
 
-
         [HttpDelete("storeid/{id}")]
         [Authorize(Roles = "super-admin, admin")]
         public async Task<IActionResult> DeleteProductById([FromRoute] int id)
         {
             try
             {
+              var product = await _product.GetProductById(id);
+              if (product == null) return NoContent();
+            
+              var identity = HttpContext.User.Identity as ClaimsIdentity; // whole taken
+              var userClaims = identity.Claims; // taking out claim section
+              var role = userClaims.FirstOrDefault(o => o.Type == ClaimTypes.Role)?.Value; //
+            
+              if (role == "admin")
+              {
+                var emailAddress = userClaims.FirstOrDefault(o => o.Type == ClaimTypes.Email)?.Value;
+                var user = await _userService.GetUserByEmail(emailAddress);
+                if (user != null)
+                {
+                    if (user.UniqueStoreId != product.UniqueStoreId)
+                        return Unauthorized("User is not allowed to delete this stores' products");
+                }
+                else
+                    return NotFound("User doesnt exist");
+            }
                 await _product.DeleteProductById(id);
                 return Ok("Desired product has been deleted");
             }
@@ -154,6 +192,7 @@ namespace EcommerceBackendApi.Controllers
 
         [HttpDelete("storeuniqueid/{uniqueStoreId}")]
         [Authorize(Roles = "super-admin, admin")]
+
         public async Task<IActionResult> DeleteProductsByUniqueStoreId([FromRoute] int uniqueStoreId)
         {
             var identity = HttpContext.User.Identity as ClaimsIdentity; // whole taken

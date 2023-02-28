@@ -1,6 +1,4 @@
-﻿using System.Text.Json.Serialization;
-
-namespace EcommerceBackendApi.ViewModels
+﻿namespace EcommerceBackendApi.ViewModels
 {
     public class GetUserRequestDto
     {
