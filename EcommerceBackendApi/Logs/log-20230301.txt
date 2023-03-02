@@ -1,0 +1,11 @@
+2023-03-01T13:16:39.5725316+01:00  [INF] Now listening on: "https://localhost:7168" (d826f4b8)
+2023-03-01T13:16:39.5826099+01:00  [INF] Now listening on: "http://localhost:5168" (d826f4b8)
+2023-03-01T13:16:39.6123707+01:00  [INF] Application started. Press Ctrl+C to shut down. (dcaefe54)
+2023-03-01T13:16:39.6167970+01:00  [INF] Hosting environment: "Development" (c3307c92)
+2023-03-01T13:16:39.6396597+01:00  [INF] Content root path: "C:\Users\bilal\OneDrive\Desktop\PGP GITHUB\EcommerceBackendApi\EcommerceBackendApi\" (b5d60022)
+2023-03-01T13:17:05.5101353+01:00 0HMOQ9R7RVTIQ:00000001 [INF] Inside the GetAllProducts (3a78651a)
+2023-03-01T13:17:11.8176224+01:00 0HMOQ9R7RVTIQ:00000001 [INF] Executed DbCommand ("356"ms) [Parameters=["@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)"], CommandType='Text', CommandTimeout='30']"
+""SELECT [p].[Id], [p].[Category], [p].[Description], [p].[ImageUrl], [p].[Price], [p].[Quantity], [p].[Title], [p].[UniqueStoreId]
+FROM [Products] AS [p]
+ORDER BY [p].[Id]
+OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY" (0723d8ff)

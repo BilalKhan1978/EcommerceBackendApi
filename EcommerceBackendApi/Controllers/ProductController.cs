@@ -25,7 +25,8 @@ namespace EcommerceBackendApi.Controllers
         [HttpGet("AllProducts")]
         public async Task<IActionResult> GetAllProducts(int offset, int count)
         {
-          try
+            _logger.LogInformation("Inside the GetAllProducts");
+            try
           {
                 return Ok(await _product.GetAllProducts(offset, count));
           }
